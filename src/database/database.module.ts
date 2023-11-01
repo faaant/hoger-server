@@ -20,8 +20,4 @@ import entities from './entities';
     }),
   ],
 })
-export class DatabaseModule {
-  constructor() {
-    console.log(process.env.PASSWORD_DB);
-  }
-}
+export class DatabaseModule {}
