@@ -1,0 +1,139 @@
+import {
+  ForbiddenException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+
+import { Position } from '@common/interfaces/accounts/Position';
+import { Accounts } from '@entities/accounts.entity';
+import { CleanerTasks } from '@entities/cleanerTasks.entity';
+import { CleanerTaskDto } from '@modules/cleanerTasks/dto';
+import { DeleteResult, Repository } from 'typeorm';
+
+import { AccountDto } from './dto';
+import { CreateAccountDto } from './dto/createAccount.dto';
+import { DeleteAccountDto } from './dto/deleteAccount.dto';
+
+@Injectable()
+export class AccountsService {
+  constructor(
+    @InjectRepository(Accounts)
+    private accountRepository: Repository<AccountDto>,
+    @InjectRepository(CleanerTasks)
+    private cleanerTaskRepository: Repository<CleanerTaskDto>,
+  ) {}
+
+  async getAll(): Promise<AccountDto[]> {
+    const accounts = await this.accountRepository.find({
+      select: ['username', 'name', 'surname', 'position'],
+      where: { deleted: false },
+    });
+
+    return this.sortByPositionAsc(this.addControls(accounts));
+  }
+
+  private addControls(accounts: AccountDto[]): AccountDto[] {
+    return accounts.map((account) => {
+      const controls: string[] = [];
+      if (account.position !== 'Admin') {
+        controls.push('Delete');
+      }
+      return {
+        ...account,
+        controls,
+      };
+    });
+  }
+
+  private sortByPositionAsc(accounts: AccountDto[]): AccountDto[] {
+    return accounts.sort((left, right) => {
+      if (left.position > right.position) {
+        return 1;
+      }
+
+      if (left.position < right.position) {
+        return -1;
+      }
+
+      return 0;
+    });
+  }
+
+  async getAccountInfo(user?: {
+    username?: string;
+  }): Promise<AccountDto | undefined> {
+    if (user?.username) {
+      return (
+        await this.accountRepository.find({
+          select: ['username', 'position'],
+          where: [{ username: user.username }],
+        })
+      )[0];
+    }
+  }
+
+  async getAccountById(_id: string): Promise<AccountDto> {
+    return (
+      await this.accountRepository.find({
+        where: [{ id: _id }],
+      })
+    )[0];
+  }
+
+  async getAccountByUsername(_username: string): Promise<AccountDto> {
+    return (
+      await this.accountRepository.find({
+        where: [{ username: _username }],
+      })
+    )[0];
+  }
+
+  async getAccountsByPosition(_position: Position): Promise<AccountDto[]> {
+    return this.accountRepository.find({
+      select: ['id', 'username', 'name', 'surname', 'position', 'password'],
+      where: [{ position: _position, deleted: false }],
+    });
+  }
+
+  async create(account: CreateAccountDto): Promise<AccountDto> {
+    if (account.position === 'Admin') {
+      throw new ForbiddenException("Admin can't be created!");
+    }
+    await this.accountRepository.create({ ...account, deleted: false });
+    return this.accountRepository.save({ ...account, deleted: false });
+  }
+
+  async deleteAccount(account: DeleteAccountDto): Promise<DeleteResult> {
+    const accountToDelete = await this.getAccountByUsername(account.username);
+    if ((accountToDelete.position = 'Cleaner')) {
+      const activeTasksOfCleaner = await this.cleanerTaskRepository.find({
+        select: ['id'],
+        where: { cleanerId: accountToDelete.id, completed: false },
+      });
+      const cleaners = await this.getAccountsByPosition('Cleaner');
+      if (cleaners.length < 2) {
+        throw new InternalServerErrorException([
+          'It is not possible to remove the last cleaner until all active tasks are completed!',
+        ]);
+      }
+
+      let cleanerIndex = -1;
+      for (const task of activeTasksOfCleaner) {
+        cleanerIndex++;
+        if (cleaners[cleanerIndex].id === accountToDelete.id) {
+          cleanerIndex++;
+        }
+        if (!cleaners?.[cleanerIndex]) {
+          cleanerIndex = 0;
+        }
+
+        await this.cleanerTaskRepository.update(task.id, {
+          cleanerId: cleaners[cleanerIndex].id,
+        });
+      }
+    }
+
+    return this.accountRepository.update(accountToDelete.id, { deleted: true });
+  }
+}
