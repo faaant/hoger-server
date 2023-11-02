@@ -5,7 +5,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Request } from 'express';
 import { Strategy } from 'passport-jwt';
 
-import { extractJWT } from './utils/extractJwt';
+import { extractJWT } from './utils';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
@@ -19,26 +19,8 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   }
 
   async validate(req: Request, payload: any) {
-    this.validateCSRF(req);
     this.validateID(req);
     return payload;
-  }
-
-  private validateCSRF(req: Request) {
-    if (req.method !== 'GET' && req.method !== 'HEAD') {
-      const csrfToken = req.headers?.['x-xsrf-token'];
-      if (!csrfToken || Array.isArray(csrfToken)) {
-        throw new ForbiddenException(['CSRF error']);
-      }
-
-      try {
-        return this.jwtService.verify(csrfToken, {
-          secret: process.env.XSRF_SECRET,
-        });
-      } catch (error) {
-        throw new ForbiddenException(['CSRF error']);
-      }
-    }
   }
 
   private validateID(req: Request) {

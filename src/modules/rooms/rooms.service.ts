@@ -1,15 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { RoomInfo } from '@common/interfaces/room/RoomInfo.interface';
+import { RoomInfo } from '@common/models/room';
 import { Rooms } from '@entities/rooms.entity';
 import { DeleteResult, Repository, UpdateResult } from 'typeorm';
 
-import { CreateRoomDto, RoomDto, UpdateRoomDto } from './dto';
-import { FilterRoomDto } from './dto/filterRoom.dto';
+import { CreateRoomDto, FilterRoomDto, RoomDto, UpdateRoomDto } from './dto';
 
 @Injectable()
-export class RoomService {
+export class RoomsService {
   constructor(
     @InjectRepository(Rooms)
     private roomRepository: Repository<RoomDto>,

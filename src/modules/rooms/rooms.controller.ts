@@ -11,25 +11,23 @@ import { Body, Res } from '@nestjs/common/decorators';
 import { AuthGuard } from '@nestjs/passport';
 
 import { Roles } from '@common/decorators/role.decorator';
-import { RolesGuard } from 'common/guards/role.guard';
+import { RolesGuard } from '@common/guards/role.guard';
 import { Response } from 'express';
 
-import { CreateRoomDto } from './dto';
-import { FilterRoomDto } from './dto/filterRoom.dto';
-import { UpdateRoomDto } from './dto/updateRoom.dto';
-import { RoomService } from './room.service';
+import { CreateRoomDto, FilterRoomDto, UpdateRoomDto } from './dto';
+import { RoomsService } from './rooms.service';
 
 @Controller('rooms')
-export class RoomController {
-  constructor(private roomService: RoomService) {}
+export class RoomsController {
+  constructor(private roomsService: RoomsService) {}
 
   @Roles('Admin', 'Receptionist')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Get()
   async getRooms(@Res() res: Response) {
-    const data = await this.roomService.getAll();
+    const data = await this.roomsService.getAll();
     return res.json({
-      data: this.roomService.convertBoolToString(data),
+      data: this.roomsService.convertBoolToString(data),
     });
   }
 
@@ -37,7 +35,7 @@ export class RoomController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Post()
   async createRoom(@Body() body: CreateRoomDto, @Res() res: Response) {
-    await this.roomService.createRoom(body);
+    await this.roomsService.createRoom(body);
     return res.json({
       message: ['Successfuly created!'],
     });
@@ -47,9 +45,9 @@ export class RoomController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Post('/filter')
   async filterRooms(@Body() body: FilterRoomDto, @Res() res: Response) {
-    const data = await this.roomService.filterRooms(body);
+    const data = await this.roomsService.filterRooms(body);
     return res.json({
-      data: this.roomService.convertBoolToString(data),
+      data: this.roomsService.convertBoolToString(data),
     });
   }
 
@@ -57,7 +55,7 @@ export class RoomController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Put()
   async updateRoomById(@Body() body: UpdateRoomDto, @Res() res: Response) {
-    await this.roomService.updateRoom(body);
+    await this.roomsService.updateRoom(body);
     return res.json({
       message: ['Successfuly updated!'],
     });
@@ -67,7 +65,7 @@ export class RoomController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Delete(':id')
   async deleteRoomById(@Param() params: { id: string }, @Res() res: Response) {
-    await this.roomService.deleteRoom(params.id);
+    await this.roomsService.deleteRoom(params.id);
     return res.json({
       message: ['Successfuly deleted!'],
     });

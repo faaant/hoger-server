@@ -15,11 +15,11 @@ import { RolesGuard } from 'common/guards/role.guard';
 import { Response } from 'express';
 
 import { CreateOrderDto, UpdateOrderDto } from './dto';
-import { OrderService } from './order.service';
+import { OrdersService } from './orders.service';
 
 @Controller('orders')
-export class OrderController {
-  constructor(private ordersService: OrderService) {}
+export class OrdersController {
+  constructor(private ordersService: OrdersService) {}
 
   @Roles('Admin')
   @UseGuards(AuthGuard('jwt'), RolesGuard)

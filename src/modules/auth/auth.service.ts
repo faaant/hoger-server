@@ -7,7 +7,7 @@ import { JwtService } from '@nestjs/jwt';
 
 import { AccountsService } from '@modules/accounts/accounts.service';
 
-import { LoginUserDto } from './dto/loginUser.dto';
+import { LoginUserDto } from './dto';
 
 @Injectable()
 export class AuthService {
@@ -24,7 +24,6 @@ export class AuthService {
   async login(user: LoginUserDto): Promise<{
     accessToken: string;
     refreshToken: string;
-    XSRF: string;
     ID_TOKEN: string;
   }> {
     if (await this.validateUser(user.username, user.password)) {
@@ -51,10 +50,6 @@ export class AuthService {
           privateKey: process.env.REFRESH_PRIVATE_KEY,
           expiresIn: '1d',
           algorithm: 'RS256',
-        }),
-        XSRF: this.jwtService.sign(payload, {
-          secret: process.env.XSRF_SECRET,
-          expiresIn: '87000s',
         }),
         ID_TOKEN: this.jwtService.sign(idPayload, {
           secret: process.env.ID_TOKEN_SECRET,

@@ -1,27 +1,26 @@
 import {
   ForbiddenException,
+  Inject,
   Injectable,
   InternalServerErrorException,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { Position } from '@common/interfaces/accounts/Position';
+import { Position } from '@common/models/accounts';
 import { Accounts } from '@entities/accounts.entity';
-import { CleanerTasks } from '@entities/cleanerTasks.entity';
-import { CleanerTaskDto } from '@modules/cleanerTasks/dto';
+import { CleanerTasksService } from '@modules/cleanerTasks';
 import { DeleteResult, Repository } from 'typeorm';
 
-import { AccountDto } from './dto';
-import { CreateAccountDto } from './dto/createAccount.dto';
-import { DeleteAccountDto } from './dto/deleteAccount.dto';
+import { AccountDto, CreateAccountDto, DeleteAccountDto } from './dto';
 
 @Injectable()
 export class AccountsService {
   constructor(
     @InjectRepository(Accounts)
     private accountRepository: Repository<AccountDto>,
-    @InjectRepository(CleanerTasks)
-    private cleanerTaskRepository: Repository<CleanerTaskDto>,
+    @Inject(forwardRef(() => CleanerTasksService))
+    private cleanerTasksService: CleanerTasksService,
   ) {}
 
   async getAll(): Promise<AccountDto[]> {
@@ -73,18 +72,18 @@ export class AccountsService {
     }
   }
 
-  async getAccountById(_id: string): Promise<AccountDto> {
+  async getAccountById(id: string): Promise<AccountDto> {
     return (
       await this.accountRepository.find({
-        where: [{ id: _id }],
+        where: [{ id }],
       })
     )[0];
   }
 
-  async getAccountByUsername(_username: string): Promise<AccountDto> {
+  async getAccountByUsername(username: string): Promise<AccountDto> {
     return (
       await this.accountRepository.find({
-        where: [{ username: _username }],
+        where: [{ username }],
       })
     )[0];
   }
@@ -96,6 +95,31 @@ export class AccountsService {
     });
   }
 
+  async getIdOfMostFreeCleaner(): Promise<string> {
+    const cleaners = await this.getAccountsByPosition('Cleaner');
+
+    const freeCleaner = (
+      await Promise.all(
+        cleaners.map(async (cleaner) => {
+          return {
+            id: cleaner.id,
+            tasksCount: (
+              await this.cleanerTasksService.getByCleanerId(cleaner.id)
+            ).length,
+          };
+        }),
+      )
+    ).reduce((left, right) => {
+      if (left.tasksCount < right.tasksCount) {
+        return left;
+      }
+
+      return right;
+    });
+
+    return freeCleaner.id;
+  }
+
   async create(account: CreateAccountDto): Promise<AccountDto> {
     if (account.position === 'Admin') {
       throw new ForbiddenException("Admin can't be created!");
@@ -104,13 +128,12 @@ export class AccountsService {
     return this.accountRepository.save({ ...account, deleted: false });
   }
 
-  async deleteAccount(account: DeleteAccountDto): Promise<DeleteResult> {
+  async deleteAccount(account: DeleteAccountDto): Promise<DeleteResult | any> {
     const accountToDelete = await this.getAccountByUsername(account.username);
     if ((accountToDelete.position = 'Cleaner')) {
-      const activeTasksOfCleaner = await this.cleanerTaskRepository.find({
-        select: ['id'],
-        where: { cleanerId: accountToDelete.id, completed: false },
-      });
+      const activeTasksOfCleaner =
+        await this.cleanerTasksService.getByCleanerId(accountToDelete.id);
+
       const cleaners = await this.getAccountsByPosition('Cleaner');
       if (cleaners.length < 2) {
         throw new InternalServerErrorException([
@@ -128,7 +151,7 @@ export class AccountsService {
           cleanerIndex = 0;
         }
 
-        await this.cleanerTaskRepository.update(task.id, {
+        await this.cleanerTasksService.update(task.id, {
           cleanerId: cleaners[cleanerIndex].id,
         });
       }

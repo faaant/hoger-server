@@ -1,4 +1,4 @@
-import { Position } from '@common/interfaces/accounts/Position';
+import { Position } from '@common/models/accounts';
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()

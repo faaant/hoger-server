@@ -3,12 +3,11 @@ import { Body, Res } from '@nestjs/common/decorators';
 import { AuthGuard } from '@nestjs/passport';
 
 import { Roles } from '@common/decorators/role.decorator';
-import { RolesGuard } from 'common/guards/role.guard';
+import { RolesGuard } from '@common/guards/role.guard';
 import { Response } from 'express';
 
 import { AccountsService } from './accounts.service';
-import { CreateAccountDto } from './dto/createAccount.dto';
-import { DeleteAccountDto } from './dto/deleteAccount.dto';
+import { CreateAccountDto, DeleteAccountDto } from './dto';
 
 @Controller('accounts')
 export class AccountsController {

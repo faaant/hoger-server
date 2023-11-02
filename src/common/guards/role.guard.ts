@@ -1,14 +1,14 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
-import { Position } from '@common/interfaces/accounts/Position';
-import { AccountsService } from '@modules/accounts/accounts.service';
+import { Position } from '@common/models/accounts';
+import { AccountsService } from '@modules/accounts';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(
-    private reflector: Reflector,
     private accountsService: AccountsService,
+    private reflector: Reflector,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -26,5 +26,6 @@ export class RolesGuard implements CanActivate {
     );
 
     return requiredRoles.some((role) => userInfo.position === role);
+    return true;
   }
 }

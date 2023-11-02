@@ -3,9 +3,9 @@ import { ConfigModule } from '@nestjs/config';
 
 import { AccountsModule } from '@modules/accounts/accounts.module';
 import { AuthModule } from '@modules/auth/auth.module';
-import { CleanerTaskModule } from '@modules/cleanerTasks/cleanerTask.module';
-import { OrderModule } from '@modules/orders/order.module';
-import { RoomModule } from '@modules/rooms/room.module';
+import { CleanerTasksModule } from '@modules/cleanerTasks';
+import { OrdersModule } from '@modules/orders';
+import { RoomsModule } from '@modules/rooms';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -17,10 +17,10 @@ import { DatabaseModule } from './database';
       isGlobal: true,
     }),
     DatabaseModule,
-    RoomModule,
-    OrderModule,
     AccountsModule,
-    CleanerTaskModule,
+    CleanerTasksModule,
+    RoomsModule,
+    OrdersModule,
     AuthModule,
   ],
   controllers: [AppController],

@@ -5,7 +5,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { Request, Response } from 'express';
 
 import { AuthService } from './auth.service';
-import { LoginUserDto } from './dto/loginUser.dto';
+import { LoginUserDto } from './dto';
 
 @Controller('auth')
 export class AuthController {
@@ -25,11 +25,6 @@ export class AuthController {
         secure: true,
         path: 'api/auth/refresh',
       });
-      res.cookie('XSRF-TOKEN', tokens.XSRF, {
-        sameSite: true,
-        secure: true,
-        path: '/',
-      });
       res.cookie('ID-TOKEN', tokens.ID_TOKEN, {
         sameSite: true,
         secure: true,
@@ -42,7 +37,6 @@ export class AuthController {
   @Post('logout')
   async logout(@Res() res: Response) {
     res.clearCookie('jwt=deleted; Max-Age=0; path=/');
-    res.clearCookie('XSRF-TOKEN=deleted; Max-Age=0; path=/');
     res.clearCookie('ID-TOKEN=deleted; Max-Age=0; path=/');
     res.cookie('jwt', 'deleted', {
       httpOnly: true,

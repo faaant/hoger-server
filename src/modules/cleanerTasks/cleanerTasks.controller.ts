@@ -12,22 +12,22 @@ import { Body, Res } from '@nestjs/common/decorators';
 import { AuthGuard } from '@nestjs/passport';
 
 import { Roles } from '@common/decorators/role.decorator';
-import { RolesGuard } from 'common/guards/role.guard';
+import { RolesGuard } from '@common/guards/role.guard';
 import { Request, Response } from 'express';
 
-import { CleanerTaskService } from './cleanerTask.service';
-import { CreateCleanerTaskDto, UpdateCleanerTaskDto } from './dto';
+import { CleanerTasksService } from './cleanerTasks.service';
+import { CompleteCleanerTaskDto, CreateCleanerTaskDto } from './dto';
 
 @Controller('cleaner/tasks')
-export class CleanerTaskController {
-  constructor(private cleanerTasksService: CleanerTaskService) {}
+export class CleanerTasksController {
+  constructor(private cleanerTasksService: CleanerTasksService) {}
 
   @Roles('Admin', 'Cleaner')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Get()
   async getTasks(@Req() req: Request, @Res() res: Response) {
     return res.json({
-      data: await this.cleanerTasksService.getTasks(req?.user),
+      data: await this.cleanerTasksService.getAll(req?.user),
     });
   }
 
@@ -38,7 +38,7 @@ export class CleanerTaskController {
     @Body() body: CreateCleanerTaskDto,
     @Res() res: Response,
   ) {
-    await this.cleanerTasksService.createCleanerTask(body);
+    await this.cleanerTasksService.create(body);
     return res.json({
       message: ['Successfuly added!'],
     });
@@ -48,10 +48,10 @@ export class CleanerTaskController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Put()
   async completeCleanerTask(
-    @Body() body: UpdateCleanerTaskDto,
+    @Body() body: CompleteCleanerTaskDto,
     @Res() res: Response,
   ) {
-    await this.cleanerTasksService.completeCleanerTaskByUser(body);
+    await this.cleanerTasksService.complete(body);
     return res.json({
       message: ['Successfuly updated!'],
     });
@@ -64,7 +64,7 @@ export class CleanerTaskController {
     @Param() params: { id: string },
     @Res() res: Response,
   ) {
-    this.cleanerTasksService.deleteCleanerTask(params.id);
+    this.cleanerTasksService.delete(params.id);
     return res.json({
       message: ['Successfuly deleted!'],
     });
