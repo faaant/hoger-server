@@ -16,17 +16,17 @@ export class AuthController {
     return this.authService.login(body).then((tokens) => {
       res.cookie('jwt', tokens.accessToken, {
         httpOnly: true,
-        sameSite: true,
+        sameSite: 'none',
         secure: true,
       });
       res.cookie('jwt', tokens.refreshToken, {
         httpOnly: true,
-        sameSite: true,
+        sameSite: 'none',
         secure: true,
         path: 'api/auth/refresh',
       });
       res.cookie('ID-TOKEN', tokens.ID_TOKEN, {
-        sameSite: true,
+        sameSite: 'none',
         secure: true,
         path: '/',
       });
@@ -40,7 +40,7 @@ export class AuthController {
     res.clearCookie('ID-TOKEN=deleted; Max-Age=0; path=/');
     res.cookie('jwt', 'deleted', {
       httpOnly: true,
-      sameSite: true,
+      sameSite: 'none',
       secure: true,
       path: 'api/auth/refresh',
       maxAge: Date.now(),
@@ -56,7 +56,7 @@ export class AuthController {
       .then((accesToken) => {
         res.cookie('jwt', accesToken, {
           httpOnly: true,
-          sameSite: true,
+          sameSite: 'none',
           secure: true,
         });
         return res.json();
