@@ -1,10 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import {
-  BadRequestException,
-  UnauthorizedException,
-} from '@nestjs/common/exceptions';
+import { BadRequestException } from '@nestjs/common/exceptions';
 import { JwtService } from '@nestjs/jwt';
 
+import { JwtPayload } from '@common/models/auth';
 import { AccountsService } from '@modules/accounts/accounts.service';
 
 import { LoginUserDto } from './dto';
@@ -24,7 +22,7 @@ export class AuthService {
   async login(user: LoginUserDto): Promise<{
     accessToken: string;
     refreshToken: string;
-    ID_TOKEN: string;
+    idToken: string;
   }> {
     if (await this.validateUser(user.username, user.password)) {
       const userInfo = await this.accountsService.getAccountByUsername(
@@ -51,7 +49,7 @@ export class AuthService {
           expiresIn: '1d',
           algorithm: 'RS256',
         }),
-        ID_TOKEN: this.jwtService.sign(idPayload, {
+        idToken: this.jwtService.sign(idPayload, {
           secret: process.env.ID_TOKEN_SECRET,
           expiresIn: '1d',
         }),
@@ -60,20 +58,16 @@ export class AuthService {
     throw new BadRequestException(['Uncorrect data']);
   }
 
-  async refreshAccessToken(cookies: { jwt?: string }) {
-    if (cookies?.jwt) {
-      const tokenPayload = this.jwtService.verify(cookies.jwt, {
-        publicKey: process.env.REFRESH_PUBLIC_KEY,
-      });
-      const payload = {
-        username: tokenPayload?.username,
-      };
-      return this.jwtService.sign(payload, {
-        privateKey: process.env.PRIVATE_KEY,
-        expiresIn: '600s',
-        algorithm: 'RS256',
-      });
-    }
-    throw new UnauthorizedException(['Unauthorized']);
+  async refreshAccessToken(payload: Partial<JwtPayload>) {
+    return {
+      accessToken: this.jwtService.sign(
+        { username: payload.username },
+        {
+          privateKey: process.env.PRIVATE_KEY,
+          expiresIn: '600s',
+          algorithm: 'RS256',
+        },
+      ),
+    };
   }
 }

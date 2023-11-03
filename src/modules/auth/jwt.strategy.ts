@@ -1,40 +1,19 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 
-import { Request } from 'express';
-import { Strategy } from 'passport-jwt';
-
-import { extractJWT } from './utils';
+import { ExtractJwt, Strategy } from 'passport-jwt';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
-  constructor(private jwtService: JwtService) {
+  constructor() {
     super({
-      jwtFromRequest: extractJWT,
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
       secretOrKey: process.env.PUBLIC_KEY,
-      passReqToCallback: true,
     });
   }
 
-  async validate(req: Request, payload: any) {
-    this.validateID(req);
+  async validate(payload: any) {
     return payload;
-  }
-
-  private validateID(req: Request) {
-    const idToken = req.cookies?.['ID-TOKEN'];
-    if (!idToken) {
-      throw new ForbiddenException(['Forbidden access!']);
-    }
-
-    try {
-      return this.jwtService.verify(idToken, {
-        secret: process.env.ID_TOKEN_SECRET,
-      });
-    } catch (error) {
-      throw new ForbiddenException(['Forbidden access!']);
-    }
   }
 }
