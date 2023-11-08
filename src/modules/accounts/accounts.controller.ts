@@ -1,4 +1,11 @@
-import { Controller, Delete, Get, Post, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  Delete,
+  Get,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { Body, Res } from '@nestjs/common/decorators';
 import { AuthGuard } from '@nestjs/passport';
 
@@ -26,7 +33,12 @@ export class AccountsController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Post()
   async createAccount(@Body() body: CreateAccountDto, @Res() res: Response) {
-    await this.accountsService.create(body);
+    try {
+      await this.accountsService.create(body);
+    } catch {
+      throw new BadRequestException('User with such username already exist');
+    }
+
     return res.json({
       message: ['Successfuly created!'],
     });
