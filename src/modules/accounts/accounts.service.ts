@@ -130,7 +130,7 @@ export class AccountsService {
 
   async deleteAccount(account: DeleteAccountDto): Promise<DeleteResult | any> {
     const accountToDelete = await this.getAccountByUsername(account.username);
-    if ((accountToDelete.position = 'Cleaner')) {
+    if (accountToDelete.position === 'Cleaner') {
       const activeTasksOfCleaner =
         await this.cleanerTasksService.getByCleanerId(accountToDelete.id);
 
